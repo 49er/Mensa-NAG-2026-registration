@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Activity Report</h1>
+<form method="post">
+  <div class="mb-3">
+    <label for="activity_id" class="form-label">Select Activity</label>
+    <select name="activity_id" id="activity_id" class="form-select" required>
+      <option value="">-- Choose an Activity --</option>
+      {% for activity in activities %}
+        <option value="{{ activity.id }}" {% if selected_activity and selected_activity.id == activity.id %}selected{% endif %}>
+          {{ activity.name }} ({{ activity.location }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn btn-primary">Generate Report</button>
+</form>
+
+{% if selected_activity %}
+  <h2 class="mt-4">Report for {{ selected_activity.name }}</h2>
+  <h4>Timeslots</h4>
+  <ul>
+    {% for slot in selected_activity.timeslots.split(';') %}
+      {% set start, end = slot.split(',') %}
+      {% set start_dt = start | as_datetime %}
+      {% set end_dt = end | as_datetime %}
+      <li>{{ start_dt.strftime('%A %H:%M to ') }}{{ end_dt.strftime('%H:%M') }}</li>
+    {% endfor %}
+  </ul>
+  <h4>Participants</h4>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Payment Status</th>
+        <th>Expiration Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in report %}
+        <tr>
+          <td>{{ item.user_name }}</td>
+          <td>{{ item.status }}</td>
+          <td>{{ item.expiration_date }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back</a>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Admin: Edit Accommodation and Meal Options</h1>
+<form method="post">
+  <input type="hidden" name="add" value="1">
+  <div class="mb-3">
+    <label>Name</label>
+    <input type="text" name="name" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label>Price</label>
+    <input type="number" name="price" step="0.01" class="form-control" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Add</button>
+</form>
+<h2>Existing Options</h2>
+{% for opt in options %}
+  <form method="post">
+    <input type="hidden" name="edit" value="1">
+    <input type="hidden" name="id" value="{{ opt.id }}">
+    <div class="mb-3">
+      <label>Name</label>
+      <input type="text" name="name" value="{{ opt.name }}" class="form-control">
+    </div>
+    <div class="mb-3">
+      <label>Price</label>
+      <input type="number" name="price" step="0.01" value="{{ opt.price }}" class="form-control">
+    </div>
+    <button type="submit" class="btn btn-success">Update</button>
+  </form>
+  <form method="post">
+    <input type="hidden" name="delete" value="1">
+    <input type="hidden" name="id" value="{{ opt.id }}">
+    <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+  <hr>
+{% endfor %}
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back</a>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Admin: Manage Users</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Membership</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+      <tr>
+        <td>{{ u.full_name }}</td>
+        <td>{{ u.membership_number }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.role }}</td>
+        <td>
+          {% if u.role != 'coordinator' and u.role != 'subcommittee' %}
+            <a href="{{ url_for('grant_subcommittee', user_id=u.id) }}" class="btn btn-info">Grant Sub-Committee</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back</a>
+{% endblock %}
