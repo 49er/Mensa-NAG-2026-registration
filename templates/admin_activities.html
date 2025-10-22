@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Manage Activities</h1>
+<h2>Add New Activity</h2>
+<form method="post">
+  <div class="mb-3">
+    <label for="name" class="form-label">Name</label>
+    <input type="text" name="name" id="name" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label for="location" class="form-label">Location</label>
+    <input type="text" name="location" id="location" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label for="price" class="form-label">Price (R)</label>
+    <input type="number" name="price" id="price" step="0.01" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label for="timeslots" class="form-label">Timeslots (ISO format: start1,end1;start2,end2)</label>
+    <input type="text" name="timeslots" id="timeslots" class="form-control" required placeholder="2025-10-25T09:00:00,2025-10-25T12:00:00">
+  </div>
+  <div class="mb-3">
+    <label for="slots" class="form-label">Slots (0 for unlimited)</label>
+    <input type="number" name="slots" id="slots" class="form-control" required value="0">
+  </div>
+  <div class="mb-3">
+    <label for="expiration_days" class="form-label">Expiration Days</label>
+    <input type="number" name="expiration_days" id="expiration_days" class="form-control" value="7">
+  </div>
+  <button type="submit" name="add" class="btn btn-primary">Add Activity</button>
+</form>
+
+<h2>Existing Activities</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Location</th>
+      <th>Price (R)</th>
+      <th>Timeslots</th>
+      <th>Slots</th>
+      <th>Expiration Days</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for activity in activities %}
+      <tr>
+        <td>{{ activity.name }}</td>
+        <td>{{ activity.location }}</td>
+        <td>R{{ activity.price | round(2) }}</td>
+        <td>
+          {% for slot in activity.timeslots.split(';') %}
+            {% set start, end = slot.split(',') %}
+            {% set start_dt = start | as_datetime %}
+            {% set end_dt = end | as_datetime %}
+            {{ start_dt.strftime('%A %H:%M to ') }}{{ end_dt.strftime('%H:%M') }}<br>
+          {% endfor %}
+        </td>
+        <td>{{ activity.slots }}</td>
+        <td>{{ activity.expiration_days }}</td>
+        <td>
+          <form method="post" style="display:inline;">
+            <input type="hidden" name="id" value="{{ activity.id }}">
+            <input type="text" name="name" value="{{ activity.name }}" required>
+            <input type="text" name="location" value="{{ activity.location }}" required>
+            <input type="number" name="price" step="0.01" value="{{ activity.price }}" required>
+            <input type="text" name="timeslots" value="{{ activity.timeslots }}" required>
+            <input type="number" name="slots" value="{{ activity.slots }}" required>
+            <input type="number" name="expiration_days" value="{{ activity.expiration_days }}" required>
+            <button type="submit" name="edit" class="btn btn-sm btn-warning">Edit</button>
+            <button type="submit" name="delete" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back</a>
+{% endblock %}
