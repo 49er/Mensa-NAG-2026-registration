@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Registration Summary</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Activity Name</th>
+      <th>Registered</th>
+      <th>Paid</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in report %}
+      <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.registered }}</td>
+        <td>{{ item.paid }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back</a>
+{% endblock %}

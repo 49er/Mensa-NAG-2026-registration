@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Master Report</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>User Name</th>
+      <th>Selections</th>
+      <th>Amount Payable</th>
+      <th>Amount Paid</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in report %}
+      <tr>
+        <td>{{ item.user.full_name }}</td>
+        <td>{{ item.selections | join(', ') }}</td>
+        <td>R{{ item.payable }}</td>
+        <td>R{{ item.paid }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back</a>
+{% endblock %}

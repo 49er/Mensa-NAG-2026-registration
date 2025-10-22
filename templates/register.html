@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Register</h1>
+<form method="post">
+  <div class="mb-3">
+    <label>Full Name</label>
+    <input type="text" name="full_name" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label>Membership Number</label>
+    <input type="text" name="membership_number" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label>Email</label>
+    <input type="email" name="email" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label>Password</label>
+    <input type="password" name="password" class="form-control" required 
+           pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?\":{}|<>]).{8,}" 
+           title="8+ chars, uppercase, lowercase, number, special char">
+    <small class="form-text text-muted">
+      Password must be 8+ characters with uppercase, lowercase, number, and special character
+    </small>
+  </div>
+  <div class="mb-3">
+    <label>Confirm Password</label>
+    <input type="password" name="confirm_password" class="form-control" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    const pass1 = document.querySelector('[name="password"]').value;
+    const pass2 = document.querySelector('[name="confirm_password"]').value;
+    if (pass1 !== pass2) {
+        e.preventDefault();
+        alert('Passwords do not match');
+    }
+});
+</script>
+{% endblock %}
