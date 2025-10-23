@@ -1,196 +1,149 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Dashboard <span class="float-end">
-  <form method="post" action="{{ url_for('toggle_subcommittee') }}" class="form-check form-switch">
-    <input class="form-check-input" type="checkbox" name="subcommittee" id="subcommitteeToggle" {% if user.role == 'subcommittee' %}checked{% endif %}>
-    <label class="form-check-label" for="subcommitteeToggle">Sub-committee Mode (Testing)</label>
-  </form>
-</span></h1>
-<p>Welcome, {{ user.full_name }} (Membership: {{ user.membership_number }})</p>
-<h2>Selected Options</h2>
+<h1>Dashboard</h1>
+<h2>Welcome, {{ user.full_name }}</h2>
+{% if user.role == 'coordinator' %}
+  <a href="{{ url_for('logged_in_users') }}" class="btn btn-info">View Logged-in Users</a>
+{% endif %}
+<form method="post">
+  {% if user.role == 'coordinator' %}
+    <div class="mb-3">
+      <input type="checkbox" name="subcommittee" id="subcommittee" {% if user.role == 'subcommittee' %}checked{% endif %}>
+      <label for="subcommittee">Sub-committee Access</label>
+    </div>
+  {% endif %}
+  <h3>Event Options</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Price (R)</th>
+        <th>Select</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for option in options %}
+        <tr>
+          <td>{{ option.name }}</td>
+          <td>R{{ option.price | round(2) }}</td>
+          <td>
+            <input type="checkbox" name="option" value="{{ option.id }}" {% if option in user_options %}checked disabled{% endif %}>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <h3>Activities</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date and Time</th>
+        <th>Name</th>
+        <th>Location</th>
+        <th>Price (R)</th>
+        <th>Slots Available</th>
+        <th>Select</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for activity in activities %}
+        {% set disabled = activity in user_activities or (activity.slots > 0 and activity.user_activities | length >= activity.slots) %}
+        {% for slot in activity.timeslots.split(';') %}
+          {% set start, end = slot.split(',') %}
+          {% set start_dt = start | as_datetime %}
+          {% set end_dt = end | as_datetime %}
+          <tr {% if disabled or activity in user_activities %}class="text-muted"{% endif %}>
+            <td>{{ start_dt.strftime('%A %H:%M') }} - {{ end_dt.strftime('%H:%M') }}</td>
+            <td>{{ activity.name }}</td>
+            <td>{{ activity.location }}</td>
+            <td>R{{ activity.price | round(2) }}</td>
+            <td>{{ activity.slots - (activity.user_activities | length) if activity.slots > 0 else 'Unlimited' }}</td>
+            <td>
+              <input type="checkbox" name="activity" value="{{ activity.id }}" {% if activity in user_activities %}checked disabled{% endif %} {% if disabled %}disabled{% endif %}>
+            </td>
+          </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+  <h3>Payment Upload</h3>
+  <div class="mb-3">
+    <input type="file" name="payment_file" class="form-control" accept=".png,.jpg,.jpeg,.pdf">
+  </div>
+  <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+<h3>Your Selections</h3>
+<p>Total Cost: R{{ ((user.event_options | sum(attribute='price')) + (user.user_activities | map(attribute='activity.price') | sum)) | round(2) }}</p>
+<h4>Options</h4>
 <ul>
-  {% for option in options %}
-    <li>{{ option.name }} (R{{ option.price }}) - {{ option.status | capitalize }}</li>
+  {% for option in user_options %}
+    <li>{{ option.name }} - R{{ option.price | round(2) }}</li>
   {% endfor %}
 </ul>
-<h2>Activities</h2>
-<div id="activities">
-  {% for activity in activities %}
-    <div class="form-check" id="act-{{ activity.id }}">
-      {% if activity.slots > 0 and get_attendees_count(activity.id) >= activity.slots %}
-        <label>
-          {{ activity.name }} ({{ activity.location }}, R{{ activity.price }}) 
-          <br>
-          {% for slot in activity.timeslots.split(';') %}
-            {% set start, end = slot.split(',') %}
-            {% set start_dt = start | as_datetime %}
-            {% set end_dt = end | as_datetime %}
-            {{ start_dt.strftime('%A %H:%M to ') }}{{ end_dt.strftime('%H:%M') }}<br>
-          {% endfor %}
-          - Fully Booked
-        </label>
-      {% else %}
-        <input type="checkbox" class="form-check-input activity-toggle" data-id="{{ activity.id }}" {% if activity.id in selected %}checked{% endif %}>
-        <label>
-          {{ activity.name }} ({{ activity.location }}, R{{ activity.price }}) 
-          <br>
-          {% for slot in activity.timeslots.split(';') %}
-            {% set start, end = slot.split(',') %}
-            {% set start_dt = start | as_datetime %}
-            {% set end_dt = end | as_datetime %}
-            {{ start_dt.strftime('%A %H:%M to ') }}{{ end_dt.strftime('%H:%M') }}<br>
-          {% endfor %}
-        </label>
-      {% endif %}
-    </div>
-  {% endfor %}
-</div>
-<h3>Total Cost: R<span id="total">0</span></h3>
-<h2>Upload Payment Confirmation</h2>
-<form method="post" action="{{ url_for('upload_payment') }}" enctype="multipart/form-data">
-  <div class="mb-3">
-    <label>Amount (R)</label>
-    <input type="number" name="amount" step="0.01" class="form-control" required>
-  </div>
-  <div class="mb-3">
-    <label>File</label>
-    <input type="file" name="file" required>
-  </div>
-  <button type="submit" class="btn btn-primary">Upload</button>
-</form>
-{% if user.payments %}
-  <h3>Payments</h3>
-  <ul>
-    {% for payment in user.payments %}
-      <li>R{{ payment.amount | float | format('%.2f') }} ({{ payment.created_at.strftime('%Y-%m-%d %H:%M') }}) - {{ payment.file }}</li>
+<h4>Activities</h4>
+<ul>
+  {% for ua in user_activities %}
+    {% for slot in ua.activity.timeslots.split(';') %}
+      {% set start, end = slot.split(',') %}
+      {% set start_dt = start | as_datetime %}
+      {% set end_dt = end | as_datetime %}
+      <li>{{ start_dt.strftime('%A %H:%M') }} - {{ end_dt.strftime('%H:%M') }}: {{ ua.activity.name }} ({{ ua.activity.location }}) - R{{ ua.activity.price | round(2) }}</li>
     {% endfor %}
-  </ul>
-{% endif %}
-<a href="{{ url_for('change_password') }}" class="btn btn-info">Change Password</a>
+  {% endfor %}
+</ul>
+<h4>Payments</h4>
+<ul>
+  {% for payment in payments %}
+    <li>{{ payment.filename }} (Uploaded: {{ payment.upload_date }})</li>
+  {% endfor %}
+</ul>
+<a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
 {% if user.role in ['subcommittee', 'coordinator'] %}
-  <a href="{{ url_for('admin_activities') }}" class="btn btn-info">Edit Activities</a>
-  <a href="{{ url_for('admin_options') }}" class="btn btn-info">Edit Options</a>
-  <a href="{{ url_for('report_master') }}" class="btn btn-info">Master Report</a>
-  <a href="{{ url_for('report_summary') }}" class="btn btn-info">Registration Summary</a>
-  <a href="{{ url_for('activity_report') }}" class="btn btn-info">Activity Report</a>
+  <a href="{{ url_for('admin_activities') }}" class="btn btn-primary">Manage Activities</a>
+  <a href="{{ url_for('admin_options') }}" class="btn btn-primary">Manage Options</a>
+  <a href="{{ url_for('report_master') }}" class="btn btn-primary">Master Report</a>
+  <a href="{{ url_for('report_summary') }}" class="btn btn-primary">Summary Report</a>
+  <a href="{{ url_for('activity_report') }}" class="btn btn-primary">Activity Report</a>
 {% endif %}
-{% if user.role == 'coordinator' %}
-  <a href="{{ url_for('admin_users') }}" class="btn btn-info">Manage Users</a>
-{% endif %}
-<a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
-
 <script>
-$(document).ready(function() {
-  const activities = {{ activities | tojson | safe }};
-  console.log('Activities loaded:', activities);
-
-  function parseTimeslots(ts) {
-    if (!ts || typeof ts !== 'string') {
-      console.error('Invalid or empty timeslots:', ts);
-      return [];
-    }
-    try {
-      return ts.split(';').map(slot => {
-        if (!slot.includes(',')) {
-          console.error('Invalid slot format:', slot);
-          return null;
-        }
-        const [start, end] = slot.split(',');
-        const startDate = new Date(start.trim());
-        const endDate = new Date(end.trim());
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          console.error('Invalid date in slot:', slot);
-          return null;
-        }
-        return { start: startDate, end: endDate };
-      }).filter(slot => slot !== null);
-    } catch (e) {
-      console.error('Error parsing timeslots:', ts, e);
-      return [];
-    }
-  }
-
-  activities.forEach(act => {
-    act.parsedTimeslots = parseTimeslots(act.timeslots);
-    console.log('Parsed timeslots for', act.name, ':', act.parsedTimeslots);
-  });
-
-  function hasOverlap(ts1, ts2) {
-    const overlap = ts1.start < ts2.end && ts2.start < ts1.end;
-    console.log('Checking overlap:', ts1.start, ts2.end, ts2.start, ts1.end, 'Result:', overlap);
-    return overlap;
-  }
-
-  function isConflict(selectedActs, candidate) {
-    console.log('Checking conflicts for', candidate.name, 'with selected:', selectedActs.map(a => a.name));
-    for (let sel of selectedActs) {
-      if (sel.id === candidate.id) continue;
-      for (let tsSel of sel.parsedTimeslots) {
-        for (let tsCand of candidate.parsedTimeslots) {
-          if (hasOverlap(tsSel, tsCand)) {
-            console.log('Overlap detected:', sel.name, 'vs', candidate.name);
-            return true;
+document.addEventListener('DOMContentLoaded', function() {
+  const checkboxes = document.querySelectorAll('input[name="activity"]');
+  checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const selectedActivities = Array.from(document.querySelectorAll('input[name="activity"]:checked')).map(cb => cb.value);
+      checkboxes.forEach(cb => {
+        const activityId = cb.value;
+        const row = cb.closest('tr');
+        const timeslots = row.cells[0].textContent.split(' - ');
+        const start = new Date(timeslots[0].replace(/(\w+) (\d+:\d+)/, '2026-10-$2'));
+        const end = new Date(timeslots[1].replace(/(\w+) (\d+:\d+)/, '2026-10-$2'));
+        const location = row.cells[2].textContent;
+        let conflict = false;
+        selectedActivities.forEach(selectedId => {
+          if (selectedId !== activityId) {
+            const selectedRow = document.querySelector(`input[value="${selectedId}"]`).closest('tr');
+            const selectedTimeslots = selectedRow.cells[0].textContent.split(' - ');
+            const selectedStart = new Date(selectedTimeslots[0].replace(/(\w+) (\d+:\d+)/, '2026-10-$2'));
+            const selectedEnd = new Date(selectedTimeslots[1].replace(/(\w+) (\d+:\d+)/, '2026-10-$2'));
+            const selectedLocation = selectedRow.cells[2].textContent;
+            if ((start < selectedEnd && end > selectedStart) && location !== selectedLocation) {
+              conflict = true;
+            }
           }
-          if (sel.location !== candidate.location && 
-              tsCand.start > tsSel.end && 
-              tsCand.start < new Date(tsSel.end.getTime() + 60*60*1000)) {
-            console.log('Location-time conflict:', sel.name, 'vs', candidate.name);
-            return true;
-          }
+        });
+        if (conflict) {
+          row.classList.add('text-muted');
+          cb.disabled = true;
+        } else {
+          row.classList.remove('text-muted');
+          cb.disabled = false;
         }
-      }
-    }
-    return false;
-  }
-
-  function updateGreyed() {
-    const selected = [];
-    $('.activity-toggle:checked').each(function() {
-      const id = parseInt($(this).data('id'));
-      const activity = activities.find(a => a.id === id);
-      if (activity) {
-        selected.push(activity);
-      } else {
-        console.error('Activity not found for ID:', id);
-      }
-    });
-    console.log('Selected activities:', selected.map(a => a.name));
-    activities.forEach(act => {
-      const elem = $('#act-' + act.id);
-      const isConflicting = isConflict(selected, act);
-      console.log('Activity', act.name, 'is conflicting:', isConflicting);
-      if (isConflicting) {
-        elem.addClass('text-muted');
-        elem.find('input').prop('disabled', true).prop('checked', false);
-      } else {
-        elem.removeClass('text-muted');
-        elem.find('input').prop('disabled', false);
-      }
-    });
-    let total = 0;
-    selected.forEach(act => total += parseFloat(act.price));
-    $('#total').text(total.toFixed(2));
-    console.log('Updated total:', total);
-  }
-
-  $('.activity-toggle').change(function() {
-    const id = parseInt($(this).data('id'));
-    console.log('Checkbox changed for ID:', id);
-    $.ajax({
-      url: '/select_activity/' + id,
-      type: 'POST',
-      success: function(response) {
-        console.log('Select activity response:', response);
-        updateGreyed();
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        console.error('Select activity failed:', textStatus, errorThrown);
-        alert('Failed to update activity selection. Please try again.');
-      }
+      });
     });
   });
-
-  updateGreyed();
 });
 </script>
+{% for message in get_flashed_messages() %}
+  <div class="alert alert-info">{{ message }}</div>
+{% endfor %}
 {% endblock %}

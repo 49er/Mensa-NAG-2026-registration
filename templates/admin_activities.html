@@ -16,8 +16,20 @@
     <input type="number" name="price" id="price" step="0.01" class="form-control" required>
   </div>
   <div class="mb-3">
-    <label for="timeslots" class="form-label">Timeslots (ISO format: start1,end1;start2,end2)</label>
-    <input type="text" name="timeslots" id="timeslots" class="form-control" required placeholder="2025-10-25T09:00:00,2025-10-25T12:00:00">
+    <label for="start_date" class="form-label">Start Date</label>
+    <input type="date" name="start_date" id="start_date" class="form-control" required min="2026-10-01" max="2026-10-31">
+  </div>
+  <div class="mb-3">
+    <label for="start_time" class="form-label">Start Time</label>
+    <input type="time" name="start_time" id="start_time" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label for="end_date" class="form-label">End Date</label>
+    <input type="date" name="end_date" id="end_date" class="form-control" required min="2026-10-01" max="2026-10-31">
+  </div>
+  <div class="mb-3">
+    <label for="end_time" class="form-label">End Time</label>
+    <input type="time" name="end_time" id="end_time" class="form-control" required>
   </div>
   <div class="mb-3">
     <label for="slots" class="form-label">Slots (0 for unlimited)</label>
@@ -45,6 +57,9 @@
   </thead>
   <tbody>
     {% for activity in activities %}
+      {% set first_slot = activity.timeslots.split(';')[0].split(',') %}
+      {% set start_dt = first_slot[0] | as_datetime %}
+      {% set end_dt = first_slot[1] | as_datetime %}
       <tr>
         <td>{{ activity.name }}</td>
         <td>{{ activity.location }}</td>
@@ -54,7 +69,7 @@
             {% set start, end = slot.split(',') %}
             {% set start_dt = start | as_datetime %}
             {% set end_dt = end | as_datetime %}
-            {{ start_dt.strftime('%A %H:%M to ') }}{{ end_dt.strftime('%H:%M') }}<br>
+            {{ start_dt.strftime('%A %H:%M') }} - {{ end_dt.strftime('%H:%M') }}<br>
           {% endfor %}
         </td>
         <td>{{ activity.slots }}</td>
@@ -65,7 +80,10 @@
             <input type="text" name="name" value="{{ activity.name }}" required>
             <input type="text" name="location" value="{{ activity.location }}" required>
             <input type="number" name="price" step="0.01" value="{{ activity.price }}" required>
-            <input type="text" name="timeslots" value="{{ activity.timeslots }}" required>
+            <input type="date" name="start_date" value="{{ start_dt.strftime('%Y-%m-%d') }}" required min="2026-10-01" max="2026-10-31">
+            <input type="time" name="start_time" value="{{ start_dt.strftime('%H:%M') }}" required>
+            <input type="date" name="end_date" value="{{ end_dt.strftime('%Y-%m-%d') }}" required min="2026-10-01" max="2026-10-31">
+            <input type="time" name="end_time" value="{{ end_dt.strftime('%H:%M') }}" required>
             <input type="number" name="slots" value="{{ activity.slots }}" required>
             <input type="number" name="expiration_days" value="{{ activity.expiration_days }}" required>
             <button type="submit" name="edit" class="btn btn-sm btn-warning">Edit</button>
@@ -77,4 +95,12 @@
   </tbody>
 </table>
 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back</a>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const dateInputs = document.querySelectorAll('input[type="date"]');
+  dateInputs.forEach(input => {
+    input.value = input.value || '2026-10-01';
+  });
+});
+</script>
 {% endblock %}

@@ -3,13 +3,17 @@
 <h1>Login</h1>
 <form method="post">
   <div class="mb-3">
-    <label>Membership Number</label>
-    <input type="text" name="membership_number" class="form-control" required>
+    <label for="identifier" class="form-label">Email or Membership Number</label>
+    <input type="text" name="identifier" id="identifier" class="form-control" required>
   </div>
   <div class="mb-3">
-    <label>Password</label>
-    <input type="password" name="password" class="form-control" required>
+    <label for="password" class="form-label">Password</label>
+    <input type="password" name="password" id="password" class="form-control" required>
   </div>
   <button type="submit" class="btn btn-primary">Login</button>
 </form>
+<a href="{{ url_for('register') }}">Register</a>
+{% for message in get_flashed_messages() %}
+  <div class="alert alert-info">{{ message }}</div>
+{% endfor %}
 {% endblock %}

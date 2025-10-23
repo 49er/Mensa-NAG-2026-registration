@@ -1,39 +1,45 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Admin: Edit Accommodation and Meal Options</h1>
+<h1>Manage Options</h1>
+<h2>Add New Option</h2>
 <form method="post">
-  <input type="hidden" name="add" value="1">
   <div class="mb-3">
-    <label>Name</label>
-    <input type="text" name="name" class="form-control" required>
+    <label for="name" class="form-label">Name</label>
+    <input type="text" name="name" id="name" class="form-control" required>
   </div>
   <div class="mb-3">
-    <label>Price</label>
-    <input type="number" name="price" step="0.01" class="form-control" required>
+    <label for="price" class="form-label">Price (R)</label>
+    <input type="number" name="price" id="price" step="0.01" class="form-control" required>
   </div>
-  <button type="submit" class="btn btn-primary">Add</button>
+  <button type="submit" name="add" class="btn btn-primary">Add Option</button>
 </form>
+
 <h2>Existing Options</h2>
-{% for opt in options %}
-  <form method="post">
-    <input type="hidden" name="edit" value="1">
-    <input type="hidden" name="id" value="{{ opt.id }}">
-    <div class="mb-3">
-      <label>Name</label>
-      <input type="text" name="name" value="{{ opt.name }}" class="form-control">
-    </div>
-    <div class="mb-3">
-      <label>Price</label>
-      <input type="number" name="price" step="0.01" value="{{ opt.price }}" class="form-control">
-    </div>
-    <button type="submit" class="btn btn-success">Update</button>
-  </form>
-  <form method="post">
-    <input type="hidden" name="delete" value="1">
-    <input type="hidden" name="id" value="{{ opt.id }}">
-    <button type="submit" class="btn btn-danger">Delete</button>
-  </form>
-  <hr>
-{% endfor %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Price (R)</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for option in options %}
+      <tr>
+        <td>{{ option.name }}</td>
+        <td>R{{ option.price | round(2) }}</td>
+        <td>
+          <form method="post" style="display:inline;">
+            <input type="hidden" name="id" value="{{ option.id }}">
+            <input type="text" name="name" value="{{ option.name }}" required>
+            <input type="number" name="price" step="0.01" value="{{ option.price }}" required>
+            <button type="submit" name="edit" class="btn btn-sm btn-warning">Edit</button>
+            <button type="submit" name="delete" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back</a>
 {% endblock %}
